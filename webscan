@@ -1,0 +1,46 @@
+#!/bin/bash
+
+#Read in URL
+echo Target URL: 
+#Save response as vairable
+read targetURL
+#run amass enum exported to txt 
+echo Starting Amass
+amass enum -active -d $targetURL -brute -src -ip -o results.txt
+#filter out ip addresses
+grep -E -o "([0-9]{1,3}[\.]){3}[0-9]{1,3}" results.txt > targetIPs.txt
+#Get original IP address
+host $targetURL | grep -E -o "([0-9]{1,3}[\.]){3}[0-9]{1,3}" >> targetIPs.txt
+#run nmap top 1000
+echo Starting nmap
+echo  >> results.txt
+echo ==================== >> results.txt
+echo NMAP RESULTS >> results.txt
+echo ==================== >> results.txt
+echo  >> results.txt
+nmap -top-ports 1000 -iL targetIPs.txt >> results.txt
+#run nikto
+echo Starting nikto
+echo  >> results.txt
+echo ==================== >> results.txt
+echo NIKTO RESULTS >> results.txt
+echo ==================== >> results.txt
+echo   >> results.txt
+nikto -host targetIPs.txt >> results.txt
+#create a file with URLS
+grep -E -o "*.com" results.txt >> targetURLs.txt
+grep -E -o "*.com.au" results.txt >> targetURLs.txt
+#grep -E -o 'http://* ' results.txt > targetURLs.txt
+#grep -E -o 'https://* ' results.txt >> targetURLs.txt
+#add the prefix
+sed -i -e 's#^#https://www.#' targetURLs.txt
+
+#run wpscan on target URL
+
+echo STARTING WPSCAN
+echo >> results.txt
+echo ==================== >> results.txt
+echo WPSCAN RESULTS >> results.txt
+echo ==================== >> results.txt
+wpscan  --api-token a4QueLPGQkoMuSOKyFYgmnGQkQBCjYBfe4dRs8CisMQ --url $targetURL >> results.txt
+
